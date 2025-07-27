@@ -28,6 +28,67 @@ def count_fingers(hand_landmarks, hand_label):
 
     return sum(fingers)
 
+
+#Directional Input
+import time
+
+last_print_time = 0
+
+def trackBox(x1, y1, x2, y2, frame):
+    global last_print_time
+    current_time = time.time()
+
+    if current_time - last_print_time >= 1:  # at least 1 second passed
+        xMid = (x1 + x2)/2
+        yMid = (y1 + y2)/2
+
+        frame_center_x = frame.shape[1] // 2
+        frame_center_y = frame.shape[0] // 2
+
+        if (xMid > frame_center_x):
+            print("left")
+        else:
+            print("right")
+
+        if (yMid > frame_center_y):
+            print("up")
+        else:
+            print("down")
+
+        last_print_time = current_time  # reset timer
+
+
+import time
+
+last_finger_count = 1
+start_hold_time = None
+speed = 0
+
+#Capture Fan Speed --> Want the hand to be up for 2 seconds to change the fan speed
+def fanSpeed(finger_count):
+    global last_finger_count
+    global start_hold_time
+    current_time = time.time()
+
+    if last_finger_count != 0:
+        if finger_count == last_finger_count:
+            if start_hold_time is not None and time.time() - start_hold_time >= 2:
+                # Finger count held for 2 seconds
+                cv2.putText(frame, f'Held {finger_count} for 2s!',
+                            (10, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
+        else:
+            last_finger_count = finger_count
+            start_hold_time = time.time()
+
+
+
+
+    #if finger_count == last_finger_count for 2 seconds 
+        #display fan speed: finger_count
+    #else if it ever changes, then update last_finger_count
+
+    #Note: fan speed must be 0 or above
+
 #Load model for person tracking
 model = YOLO('yolov8n.pt')  # This will download the model if not cached
 
@@ -57,7 +118,9 @@ while cap.isOpened():
             finger_count = count_fingers(hand_landmarks, hand_label)
             cv2.putText(frame, f'{hand_label} Hand: {finger_count} fingers',
                         (10, 30 if hand_label == "Right" else 60),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)    
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+            fanSpeed(finger_count)
+    
     # Run detection (only 'person' class)
     results = model(frame, classes=[0], conf=0.6, verbose=False)
 
@@ -70,6 +133,7 @@ while cap.isOpened():
             cv2.rectangle(frame, (x1, y1), (x2, y2), (255, 0, 0), 2)
             cv2.putText(frame, label, (x1, y1 - 5),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+            trackBox(x1,y1,x2,y2,frame)
 
     cv2.imshow('Concurrent Tracking', frame)
     if cv2.waitKey(1) & 0xFF == 27:  # Press Esc to exit
