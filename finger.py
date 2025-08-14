@@ -25,7 +25,7 @@ def count_fingers(hand_landmarks, hand_label):
         else:
             fingers.append(0)
     
-    print(sum(fingers))
+    print(sum(fingers)) ## want this to be consistent for 2 seconds, if it is
     return sum(fingers)
 
 # Start video capture
